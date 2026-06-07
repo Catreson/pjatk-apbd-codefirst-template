@@ -1,0 +1,165 @@
+# LibraryShop API - Test file for VS Code REST Client extension
+# Install: VS Code -> Extensions -> "REST Client" by Huachao Mao
+# Usage: click "Send Request" above any request
+
+@baseUrl = http://localhost:5277
+
+###############################################################################
+# BOOKS
+###############################################################################
+
+### 1. Get ALL books (no filter)
+GET {{baseUrl}}/api/books
+Accept: application/json
+
+###
+
+### 2. Get books filtered by author last name
+GET {{baseUrl}}/api/books?authorLastName=Tolkien
+Accept: application/json
+
+###
+
+### 3. Get books filtered by price range (20 to 35 PLN)
+GET {{baseUrl}}/api/books?minPrice=20&maxPrice=35
+Accept: application/json
+
+###
+
+### 4. Get Fantasy books that are in stock
+GET {{baseUrl}}/api/books?category=Fantasy&inStock=true
+Accept: application/json
+
+###
+
+### 5. Combine filters: Orwell's books under 30 PLN
+GET {{baseUrl}}/api/books?authorLastName=Orwell&maxPrice=30
+Accept: application/json
+
+###
+
+### 6. Get a single book by ID (book 3 = Fellowship of the Ring)
+GET {{baseUrl}}/api/books/3
+Accept: application/json
+
+###
+
+### 7. Get a book that does NOT exist (expect 404)
+GET {{baseUrl}}/api/books/999
+Accept: application/json
+
+###
+
+### 8. Create a new book
+POST {{baseUrl}}/api/books
+Content-Type: application/json
+
+{
+  "title": "Children of Dune",
+  "price": 42.50,
+  "stock": 6,
+  "publishedAt": "1976-04-21T00:00:00",
+  "authorId": 3,
+  "categoryIds": [2]
+}
+
+###
+
+### 9. Update book with id=1 (change price and stock)
+PUT {{baseUrl}}/api/books/1
+Content-Type: application/json
+
+{
+  "title": "The Witcher: Blood of Elves",
+  "price": 34.99,
+  "stock": 20,
+  "publishedAt": "1994-01-01T00:00:00",
+  "authorId": 1,
+  "categoryIds": [1, 5]
+}
+
+###
+
+### 10. Delete a book (be careful - once deleted, it's gone)
+DELETE {{baseUrl}}/api/books/8
+Accept: application/json
+
+###
+
+###############################################################################
+# ORDERS
+###############################################################################
+
+### 11. Get order by ID (order 1 = Anna's fulfilled order)
+GET {{baseUrl}}/api/orders/1
+Accept: application/json
+
+###
+
+### 12. Get order that is NOT yet fulfilled (order 2)
+GET {{baseUrl}}/api/orders/2
+Accept: application/json
+
+###
+
+### 13. Create a new order (Piotr buys 1984 and Dune Messiah)
+# NOTE: Dune Messiah (id=6) has Stock=0 so this will return 400 Bad Request
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{
+  "customerId": 2,
+  "items": [
+    { "bookId": 7, "quantity": 1 },
+    { "bookId": 6, "quantity": 1 }
+  ]
+}
+
+###
+
+### 14. Create a valid order (Anna buys 2 copies of Animal Farm)
+POST {{baseUrl}}/api/orders
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "items": [
+    { "bookId": 8, "quantity": 2 }
+  ]
+}
+
+###
+
+### 15. Fulfill order #2 (mark it as completed)
+PUT {{baseUrl}}/api/orders/2/fulfill
+Content-Type: application/json
+
+###
+
+### 16. Try to fulfill order #2 AGAIN (expect 409 Conflict)
+PUT {{baseUrl}}/api/orders/2/fulfill
+Content-Type: application/json
+
+###
+
+###############################################################################
+# CUSTOMERS
+###############################################################################
+
+### 17. Get customer #1 (Anna) with all her orders
+GET {{baseUrl}}/api/customers/1
+Accept: application/json
+
+###
+
+### 18. Get customer #2 (Piotr)
+GET {{baseUrl}}/api/customers/2
+Accept: application/json
+
+###
+
+### 19. Get customer that does NOT exist (expect 404)
+GET {{baseUrl}}/api/customers/999
+Accept: application/json
+
+###
