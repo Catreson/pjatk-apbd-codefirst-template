@@ -29,7 +29,6 @@ Install these first:
 | Tool | Install | Check version |
 |------|---------|---------------|
 | .NET 10 SDK | https://dot.net | `dotnet --version` |
-| Docker Desktop | https://docker.com | `docker --version` |
 | VS Code or Rider | any editor | - |
 
 > **VS Code users:** Install the "REST Client" extension (by Huachao Mao) to run `.http` files.
