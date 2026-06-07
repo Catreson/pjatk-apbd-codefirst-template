@@ -10,14 +10,15 @@ Domain: a bookshop where customers can place orders for books.
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
-2. [Project Structure](#project-structure)
-3. [Database Setup (Docker)](#database-setup-docker)
-4. [Running the Project](#running-the-project)
-5. [EF Core Migration Commands](#ef-core-migration-commands)
-6. [All API Endpoints](#all-api-endpoints)
-7. [LINQ Examples Explained](#linq-examples-explained)
-8. [Key Concepts Explained](#key-concepts-explained)
-9. [How to Adapt This for a Test](#how-to-adapt-this-for-a-test)
+2. [Creating a New Project From Scratch](#creating-a-new-project-from-scratch)
+3. [Project Structure](#project-structure)
+4. [Database Setup (LocalDB)](#database-setup-localdb)
+5. [Running the Project](#running-the-project)
+6. [EF Core Migration Commands](#ef-core-migration-commands)
+7. [All API Endpoints](#all-api-endpoints)
+8. [LINQ Examples Explained](#linq-examples-explained)
+9. [Key Concepts Explained](#key-concepts-explained)
+10. [How to Adapt This for a Test](#how-to-adapt-this-for-a-test)
 
 ---
 
@@ -32,6 +33,153 @@ Install these first:
 | VS Code or Rider | any editor | - |
 
 > **VS Code users:** Install the "REST Client" extension (by Huachao Mao) to run `.http` files.
+
+---
+
+## Creating a New Project From Scratch
+
+Use these commands when starting a brand-new project on a test or assignment.
+Run them once, in order, from whatever folder you want the project to live in.
+
+### Step 1 — Create the solution and the Web API project
+
+```bash
+# Create a blank solution file
+dotnet new sln -n MyProjectName
+
+# Create an ASP.NET Core Web API project with traditional controllers
+# --use-controllers  → uses Controllers/ folder instead of minimal API
+# -o MyProjectName   → puts the project into a subfolder with that name
+dotnet new webapi -n MyProjectName --use-controllers -o MyProjectName
+
+# Add the project to the solution (so Rider/VS sees it)
+dotnet sln MyProjectName.slnx add MyProjectName/MyProjectName.csproj
+```
+
+> After this you have: `MyProjectName.slnx` + `MyProjectName/` folder with `Program.cs`, `Controllers/`, etc.
+
+### Step 2 — Add NuGet packages
+
+Navigate into the project folder first, then add packages:
+
+```bash
+cd MyProjectName
+
+# EF Core provider for SQL Server (includes LocalDB support)
+dotnet add package Microsoft.EntityFrameworkCore.SqlServer
+
+# Design-time tools needed by dotnet ef migrations add / update
+dotnet add package Microsoft.EntityFrameworkCore.Design
+
+# Tools package - also needed for the dotnet ef CLI commands
+dotnet add package Microsoft.EntityFrameworkCore.Tools
+
+# Swagger UI (the web page that lets you test your endpoints in a browser)
+dotnet add package Swashbuckle.AspNetCore.SwaggerUI
+```
+
+> You can check what was added by opening `MyProjectName.csproj` - you'll see `<PackageReference>` entries.
+
+### Step 3 — Create the folder structure
+
+```bash
+mkdir Models
+mkdir Configurations
+mkdir Data
+mkdir DTOs
+mkdir Services
+mkdir Exceptions
+```
+
+Or just create them as you need them — the compiler doesn't care about empty folders.
+
+### Step 4 — Delete the boilerplate files
+
+The template creates `WeatherForecast.cs` and `Controllers/WeatherForecastController.cs` which you don't need:
+
+```bash
+del WeatherForecast.cs
+del Controllers\WeatherForecastController.cs
+```
+
+### Step 5 — Set the connection string
+
+Open `appsettings.json` and add the `ConnectionStrings` section:
+
+```json
+{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft.AspNetCore": "Warning"
+    }
+  },
+  "AllowedHosts": "*",
+  "ConnectionStrings": {
+    "Default": "Data Source=(localdb)\\MSSQLLocalDB;Initial Catalog=MyDatabaseName;Integrated Security=True;Connect Timeout=30;"
+  }
+}
+```
+
+> Change `MyDatabaseName` to whatever you want the database to be called.
+
+### Step 6 — Wire up EF Core and services in Program.cs
+
+Replace the contents of `Program.cs` with:
+
+```csharp
+using Microsoft.EntityFrameworkCore;
+using MyProjectName.Data;     // your namespace
+using MyProjectName.Services; // your namespace
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddControllers();
+builder.Services.AddOpenApi();
+
+// Register EF Core - reads connection string from appsettings.json
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default")));
+
+// Register your services here, one line per service:
+// builder.Services.AddScoped<IBookService, BookService>();
+
+var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
+    app.UseSwaggerUI(opt =>
+    {
+        opt.SwaggerEndpoint("/openapi/v1.json", "v1");
+        opt.RoutePrefix = string.Empty; // Swagger at http://localhost:PORT/
+    });
+}
+
+app.UseHttpsRedirection();
+app.MapControllers();
+app.Run();
+```
+
+### Step 7 — Write your code (Models → Configurations → AppDbContext → DTOs → Services → Controllers)
+
+See the rest of this README for examples of each file.
+
+### Step 8 — Create and apply the first migration
+
+```bash
+# Generate migration files in the Migrations/ folder
+dotnet ef migrations add InitialCreate
+
+# Apply migration to the database (creates the DB if it doesn't exist)
+dotnet ef database update
+```
+
+### Step 9 — Run
+
+```bash
+dotnet run
+```
 
 ---
 
